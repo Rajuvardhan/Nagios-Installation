@@ -27,30 +27,49 @@
   chown -R nagios.nagios /usr/local/nagios/libexec
 * Installing xinetd required by nagios
   apt install xinetd
+
+* Prerequisites
+  sudo apt-get update
+  sudo apt-get install -y autoconf automake gcc libc6 libmcrypt-dev make libssl-dev wget openssl
 * Chaning the directory to /tmp
   cd /tmp
 * Downloading the agent
-  wget https://github.com/NagiosEnterprises/nrpe/releases/download/nrpe-4.0.2/nrpe-4.0.2.tar.gz
+  wget --no-check-certificate -O nrpe.tar.gz https://github.com/NagiosEnterprises/nrpe/archive/nrpe-4.1.0.tar.gz
 * Untar the file
-  tar -xzf nrpe-4.0.2.tar.gz
+  tar xzf nrpe.tar.gz
 * Change directory to the directory
-  cd nrpe-4.0.2
+  cd /tmp/nrpe-nrpe-4.1.0/
 * Execute the configure script
-  ./configure
+  sudo ./configure --enable-command-args --with-ssl-lib=/usr/lib/x86_64-linux-gnu/
 * Compile the code
-  make all
+  sudo make all
 * Install the code  
-  make install-groups-users
-* Install the code
-  make install
+  sudo make install-groups-users
+* Install the Binaries
+  sudo make install
 * Install the config file  
-  make install-config
+  sudo make install-config
+* update services file
+  sudo sh -c "echo >> /etc/services"
+  sudo sh -c "sudo echo '# Nagios services' >> /etc/services"
+  sudo sh -c "sudo echo 'nrpe    5666/tcp' >> /etc/services"
 * Install the code
-  make install-inetd
+  sudo make install-inetd
 * Install the code
-  make install-init
+  sudo make install-init
 * Start and enable boot start
-  systemctl enable nrpe && systemctl start nrpe
+  sudo systemctl enable nrpe.service
+* Configure Firewall
+  sudo mkdir -p /etc/ufw/applications.d
+  sudo sh -c "echo '[NRPE]' > /etc/ufw/applications.d/nagios"
+  sudo sh -c "echo 'title=Nagios Remote Plugin Executor' >> /etc/ufw/applications.d/nagios"
+  sudo sh -c "echo 'description=Allows remote execution of Nagios plugins' >> /etc/ufw/applications.d/nagios"
+  sudo sh -c "echo 'ports=5666/tcp' >> /etc/ufw/applications.d/nagios"
+  sudo ufw allow NRPE
+  sudo ufw reload
+  
+  sudo systemctl start nrpe.service
+  sudo systemctl status nrpe.service
 * Check the ports if they are open 
   netstat -at | egrep "nrpe|5666"
 * Below commands can be used to check if the metrics are monitored from the local machine (Machine where nrpe is installed).
